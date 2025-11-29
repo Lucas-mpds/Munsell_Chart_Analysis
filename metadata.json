@@ -1,0 +1,7 @@
+{
+  "name": "MunsellSoftware",
+  "description": "Capture photos and analyze colors instantly using pixel-perfect detection.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
