@@ -24,10 +24,10 @@ const StartMenu: React.FC<StartMenuProps> = ({ onStart }) => {
 
         <div className="text-center space-y-4">
           <h1 className="text-5xl font-bold tracking-tighter bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
-            ChromaLens
+            Munsell Color
           </h1>
           <p className="text-gray-400 text-lg font-light tracking-wide">
-            Precision Color Analysis
+            Analytical Physics Engine
           </p>
         </div>
 
@@ -41,7 +41,7 @@ const StartMenu: React.FC<StartMenuProps> = ({ onStart }) => {
       </div>
       
       <div className="absolute bottom-8 text-gray-600 text-xs font-mono uppercase tracking-widest z-10">
-        Munsell System Enabled
+        Offline Algorithm • No AI
       </div>
     </div>
   );

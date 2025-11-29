@@ -2,7 +2,7 @@
 // Note: Exact Munsell conversion requires a large lookup table (Renotation Data).
 // This uses a mathematical approximation suitable for general UI purposes.
 
-export const rgbToMunsell = (r: number, g: number, b: number): string => {
+export const rgbToMunsell = (r: number, g: number, b: number): { notation: string, name: string } => {
   // 1. RGB to XYZ (D65)
   // Normalize RGB to 0-1
   let R = r / 255;
@@ -59,7 +59,7 @@ export const rgbToMunsell = (r: number, g: number, b: number): string => {
   // Munsell Chroma is roughly C*ab / 5 to 5.5 depending on hue
   const Cab = Math.sqrt(a * a + bVal * bVal);
   let C = Cab / 5.5; 
-  const roundedC = Math.max(0, Math.round(C)); // Chroma is usually an integer or 0.5 steps in charts, we use integer for simplicity
+  const roundedC = Math.max(0, Math.round(C)); 
 
   // Calculate Hue (H)
   // Hue Angle h_ab = atan2(b*, a*)
@@ -67,48 +67,25 @@ export const rgbToMunsell = (r: number, g: number, b: number): string => {
   let h_deg = h_rad * (180 / Math.PI);
   if (h_deg < 0) h_deg += 360;
 
-  const hueString = getMunsellHue(h_deg);
-
-  // If color is very dark or neutral, return neutral gray notation
+  const hueCode = getMunsellHueCode(h_deg);
+  const hueName = getMunsellHueName(hueCode);
+  
+  // Generate Notation
+  let notation = "";
   if (roundedC < 0.5) {
-    return `N ${roundedV}/`;
+    notation = `N ${roundedV}/`;
+  } else {
+    notation = `${hueCode} ${roundedV}/${roundedC}`;
   }
 
-  return `${hueString} ${roundedV}/${roundedC}`;
+  // Generate Analytical Name
+  const name = getAnalyticalColorName(roundedV, roundedC, hueName);
+
+  return { notation, name };
 };
 
-// Map Lab Hue angle to Munsell Hue Sector
-// Approximate centers of Munsell hues in Lab space (in degrees)
-function getMunsellHue(h: number): string {
-  // Munsell Hues: 
-  // R, YR, Y, GY, G, BG, B, PB, P, RP
-  // Each sector is 10 steps (e.g., 2.5R, 5R, 7.5R, 10R)
-  // We will map to the 5.0 of each sector for simplicity (5R, 5YR, etc.)
-  
-  // Angle map (Approximate):
-  // 5R: 24
-  // 5YR: 52
-  // 5Y: 87
-  // 5GY: 123
-  // 5G: 158
-  // 5BG: 195
-  // 5B: 235
-  // 5PB: 275
-  // 5P: 315
-  // 5RP: 350
-  
-  // Define sector boundaries (midpoints between the angles above)
-  // R: 350 - 38 (wrap around)
-  // YR: 38 - 69
-  // Y: 69 - 105
-  // GY: 105 - 140
-  // G: 140 - 176
-  // BG: 176 - 215
-  // B: 215 - 255
-  // PB: 255 - 295
-  // P: 295 - 332
-  // RP: 332 - 350+
-
+// Map Lab Hue angle to Munsell Hue Sector Code (5R, 5YR, etc.)
+function getMunsellHueCode(h: number): string {
   if (h >= 332 || h < 38) return "5R";
   if (h >= 38 && h < 69) return "5YR";
   if (h >= 69 && h < 105) return "5Y";
@@ -118,6 +95,51 @@ function getMunsellHue(h: number): string {
   if (h >= 215 && h < 255) return "5B";
   if (h >= 255 && h < 295) return "5PB";
   if (h >= 295 && h < 332) return "5P";
+  return "5R"; 
+}
+
+// Map Code to basic English Hue
+function getMunsellHueName(code: string): string {
+  const map: Record<string, string> = {
+    "5R": "Red",
+    "5YR": "Yellow-Red",
+    "5Y": "Yellow",
+    "5GY": "Green-Yellow",
+    "5G": "Green",
+    "5BG": "Blue-Green",
+    "5B": "Blue",
+    "5PB": "Purple-Blue",
+    "5P": "Purple",
+    "5RP": "Red-Purple" // Note: Our simplified map maps RP into R or P depending on angle, but technically exists
+  };
+  return map[code] || "Neutral";
+}
+
+// Deterministic naming based on Value and Chroma
+function getAnalyticalColorName(v: number, c: number, hueName: string): string {
+  if (c < 0.5) {
+    if (v > 8.5) return "White";
+    if (v < 1.5) return "Black";
+    return `Neutral Gray (V=${v})`;
+  }
+
+  let brightness = "";
+  if (v >= 8) brightness = "Pale";
+  else if (v >= 6) brightness = "Light";
+  else if (v >= 4) brightness = "Medium";
+  else if (v >= 2) brightness = "Dark";
+  else brightness = "Deep";
+
+  let saturation = "";
+  if (c < 2) saturation = "Grayish";
+  else if (c < 6) saturation = "Moderate";
+  else if (c < 10) saturation = "Strong";
+  else saturation = "Vivid";
+
+  // Combine
+  // Example: "Vivid Dark Red"
+  // Simplify redundant terms
+  if (saturation === "Moderate" && brightness === "Medium") return hueName;
   
-  return "5R"; // Fallback
+  return `${saturation} ${brightness} ${hueName}`.trim();
 }

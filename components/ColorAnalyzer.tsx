@@ -63,9 +63,10 @@ const ColorAnalyzer: React.FC<ColorAnalyzerProps> = ({ imageSrc, onRetake }) => 
       const pixel = ctx.getImageData(x, y, 1, 1).data;
       const rgb: RGB = { r: pixel[0], g: pixel[1], b: pixel[2] };
       const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
-      const munsell = rgbToMunsell(rgb.r, rgb.g, rgb.b);
+      // Synchronous analytical calculation
+      const { notation, name } = rgbToMunsell(rgb.r, rgb.g, rgb.b);
       
-      const newColorData = { rgb, hex, munsell };
+      const newColorData = { rgb, hex, munsell: notation, name };
       setSelectedColor(newColorData);
     } catch (e) {
       console.error("Error reading pixel data", e);
@@ -120,8 +121,8 @@ const ColorAnalyzer: React.FC<ColorAnalyzerProps> = ({ imageSrc, onRetake }) => 
                 <h2 className="text-4xl font-bold tracking-tight text-white mb-1 font-mono">
                   {selectedColor.munsell}
                 </h2>
-                <div className="text-gray-400 font-mono text-sm uppercase tracking-wider">
-                   Munsell Color
+                <div className="text-indigo-400 font-medium text-sm tracking-wide">
+                   {selectedColor.name}
                 </div>
               </div>
               <div 
